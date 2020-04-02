@@ -9,6 +9,8 @@ Rather than keep this app to myself, I thought I would share it with world shuol
 
 The one caveat to all this is that as of publishing this, there's really no good way to created an automation script to install this automatically. It could probably be done through the Azure CLI or Powershell and run in CloudShell or on a desktop, but it can also be quickly set up in the Azure Portal too. So here are the instruction on how to set this up.
 
+[![YouTube How-To](https://img.youtube.com/vi/HaECQCFCoBY/0.jpg)](https://www.youtube.com/watch?v=HaECQCFCoBY)
+
 ## Create a Storage Account	
 
 1. In the Azure Portal, Click "Crate a resource" and then select, Storage -> Storage account - blob, file, table, queue.
