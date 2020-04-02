@@ -1,0 +1,620 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="Blaize Stewart">
+    <title>Blobcaster</title>
+
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<meta name="theme-color" content="#563d7c">
+
+
+    <style>
+	  body {
+		padding-top:100px;
+	  }
+	
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+    </style>
+    <!-- Custom styles for this template -->
+
+	
+<script>
+
+Date.prototype.toDateInputValue = (function() {
+    var local = new Date(this);
+    local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
+    return local.toJSON().slice(0,10);
+});
+
+
+function pubDate(dateStr) {
+
+   var dateParts = dateStr.split("-");
+000
+  var date = new Date(dateParts[0],parseInt(dateParts[1]) - 1,dateParts[2])
+
+
+  var pieces     = date.toString().split(' '),
+      offsetTime = pieces[5].match(/[-+]\d{4}/),
+      offset     = (offsetTime) ? offsetTime : pieces[5],
+      parts      = [
+        pieces[0] + ',',
+        pieces[2],
+        pieces[1],
+        pieces[3],
+        pieces[4]
+      ];
+
+  return parts.join(' ');
+}
+
+var episodes;
+var blobService;
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var decodedCookie = decodeURIComponent(document.cookie);
+  var ca = decodedCookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0) == ' ') {
+      c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+      return c.substring(name.length, c.length);
+    }
+  }
+  return "";
+}
+
+
+function login(){
+
+	if(document.getElementById("remember").checked){
+		setCookie("account", document.getElementById('accountName').value, 365);
+		setCookie("sasToken", document.getElementById('sasToken').value, 365);	
+	}else{
+		setCookie("account", "", 0);
+		setCookie("sasToken", "", 0);		
+	}
+
+	var blobUri = 'https://' + document.getElementById('accountName').value + '.blob.core.windows.net';
+	blobService = AzureStorage.Blob.createBlobServiceWithSas(blobUri, document.getElementById('sasToken').value);		
+
+
+
+	blobService.getContainerMetadata('$web', function(error, result, response) {
+		finishedOrError = true;
+		if (error) {
+			alert(error.message)
+		} else {
+		
+			for (var key in result.metadata) {
+				document.getElementById(key).value = result.metadata[key];
+			}
+			listEpisodes();
+			$('#logonModal').modal('hide');
+		}
+	});	
+
+}
+
+function init(){	
+	//document.getElementById("episodeDate").value = new Date().toDateInputValue();
+	
+	var account = getCookie("account");
+	if (account != "") {
+		 document.getElementById('accountName').value = account;
+		 document.getElementById('sasToken').value = getCookie("sasToken");
+		 document.getElementById('remember').checked = true;
+	}	
+	
+	$('#logonModal').modal('show')
+	
+}
+
+function listEpisodes(){
+
+	blobService.listBlobsSegmentedWithPrefix("$web", "episodes", null,{include:"metadata"}, function (error, results) {
+		if (error) {;
+			alert(error.message)
+		} else {
+			
+			var episodeTable = document.getElementById("episodeTable");
+		
+			episodeTable.innerHTML = "";
+		
+			episodes = results.entries;
+		
+			for (var i = 0, episode; episode = results.entries[i]; i++) {	
+			
+				episodeTable.innerHTML += `<div class="row mb-3">
+<div class="col-2 themed-grid-col"><input class="form-control" type="text" value="${episode.metadata.name}" id="episodeName${i}"></div>
+<div class="col-2 themed-grid-col"><input class="form-control" type="date" value="${episode.metadata.date}" id="episodeDate${i}"></div>
+<div class="col-2 themed-grid-col"><input class="form-control" type="text" value="${episode.metadata.description}" id="episodeDescription${i}"></div>
+<div class="col-3 themed-grid-col">${episode.name.substr(9)}</div>
+<div class="col-3 themed-grid-col">
+<button class="btn btn-outline-secondary" type="button" onclick="saveEpisode(${i})">💾</button>
+<button class="btn btn-outline-secondary" type="button" onclick="downloadEpisode(${i})">📥</button>
+<button class="btn btn-outline-secondary" type="button" onclick="deleteEpisode(${i})">🗑️</button>
+</div>
+</div>`
+			}
+		}
+		writePodcastXML();
+	});
+
+
+
+}
+
+function addEpisode(){
+	if(document.getElementById('episodeFile').files.length < 1){
+		alert("Please select a file.")
+	}else{
+
+		var file = document.getElementById('episodeFile').files[0];
+		
+		var reader = new FileReader();
+		reader.onload = function (e) {
+			var a = document.createElement('audio');
+			document.body.appendChild(a);
+			a.src = e.target.result;
+			
+            a.addEventListener('loadedmetadata', function(){
+                var duration = a.duration;
+				
+				document.body.removeChild(a);	
+
+				var meta={
+					name:document.getElementById('episodeName').value,
+					description:document.getElementById('episodeDescription').value,
+					date: document.getElementById('episodeDate').value,
+					duration: duration
+				}
+				
+				$("#newEpisodeForm").hide();
+				$("#uploadProgress").show();
+				$("#addEpisodeCancelButton").hide();
+				$("#addEpisodeUploadButton").hide();
+				
+				var uploadOrError = false;
+				
+				var customBlockSize = file.size > 1024 * 1024 * 32 ? 1024 * 1024 * 4 : 1024 * 512;
+				blobService.singleBlobPutThresholdInBytes = customBlockSize;
+
+				var speedSummary = blobService.createBlockBlobFromBrowserFile('$web', "episodes/" + file.name, file, {metadata : meta, blockSize : customBlockSize}, function(error, result, response) {				
+					
+					var uploadOrError = true;
+					var msg="Upload successful."
+					if (error) {
+						msg = error.message;						
+					} 			
+
+					$("#uploadLabel").html(msg);
+					$("#addEpisodeOKButton").show();
+				
+					
+					listEpisodes();			
+					
+				});
+
+				var doProgress = function(){
+					var progress = speedSummary.getCompletePercent();
+					if(uploadOrError) progress = 100;
+					$("#uploadProgressBar").css('width', progress+'%').attr('aria-valuenow', progress);				
+					if(!uploadOrError){
+						setTimeout(function(){ 
+							doProgress();
+						}, 200);
+					}
+				}
+				doProgress();
+			
+				
+            },false);			
+		}
+		reader.readAsDataURL(file);		
+		
+	}
+}
+
+function resetNewEpisode(){
+	$('#newEpisodeModal').modal('hide');
+	$("#newEpisodeForm").show();
+	$("#uploadProgress").hide();					
+	$("#addEpisodeCancelButton").show();
+	$("#addEpisodeUploadButton").show();
+	$("#addEpisodeOKButton").hide();
+	$("#uploadLabel").html("Uploading...");
+	$("#episodeName").val("");
+	$("#episodeDescription").val("");
+	$("#episodeDate").val(new Date().toDateInputValue());
+}
+
+function saveEpisode(idx){
+	var episode = episodes[idx];
+	var metadata = {
+		name: document.getElementById("episodeName" + idx).value,
+		date: document.getElementById("episodeDate" + idx).value,
+		description: document.getElementById("episodeDescription" + idx).value,
+		duration: episode.metadata.duration
+	}
+	
+	blobService.setBlobMetadata("$web", episode.name, metadata, function(error, result) {
+		if (error) {
+			alert("Could save episode metadata: " + error.message);
+		} else {
+			alert("Episode saved.");
+			listEpisodes();
+		}
+	});	
+}
+
+function downloadEpisode(idx){
+	var file_path = episodes[idx].name;
+	var a = document.createElement('A');
+	a.href = file_path;
+	a.download = file_path.substr(file_path.lastIndexOf('/') + 1);
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+}
+
+function deleteEpisode(idx){
+	var episode = episodes[idx];
+	if (confirm("Delete episode: '" + episode.metadata.name + "'?")){
+		blobService.deleteBlobIfExists("$web", episode.name, function(error, result) {
+			if (error) {
+				alert("Could not delete episode: " + error.message);
+			} else {
+				alert("Episode Deleted.");
+				listEpisodes();
+			}
+		});	
+	}
+}
+
+function savePodcastMeta(){
+	var meta = document.getElementById("podcastMeta").getElementsByTagName("INPUT")
+	var metadata = {};
+	for (var i = 0, kvp; kvp = meta[i]; i++) {
+		if (kvp.value.trim() != ""){
+			metadata[kvp.id] = kvp.value;
+		}
+	}
+	blobService.setContainerMetadata("$web", metadata, function(error, result) {
+		if (error) {
+			alert("Could save  metadata: " + error.message);
+			$('#editPodcastMetaModal').modal('hide')
+		} else {
+			alert("Metadata saved.");
+			$('#editPodcastMetaModal').modal('hide')
+			listEpisodes();
+		}
+	});		
+}
+
+function writePodcastXML(){
+var template = `<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" version="2.0">
+<channel>
+<title>~title~</title>
+<link>~link~</link>
+<language>~language~</language>
+<itunes:subtitle>~itunes_subtitle~</itunes:subtitle>
+<itunes:author>~itunes_author~</itunes:author>
+<itunes:summary>~itunes_summary~</itunes:summary>
+<description>~description~</description>
+<copyright>~copyright~</copyright>
+<itunes:owner>
+    <itunes:name>~itunes_name~</itunes:name>
+    <itunes:email>~itunes_email~</itunes:email>
+</itunes:owner>
+<itunes:explicit>~itunes_explicit~</itunes:explicit>
+<itunes:image href="~itunes_image~" />
+<itunes:category text="~itunes_category~"/>
+~items~
+</channel>
+</rss>`
+
+	var meta = document.getElementById("podcastMeta").getElementsByTagName("INPUT")
+	for (var i = 0, kvp; kvp = meta[i]; i++) {	
+		var re = new RegExp("~" + kvp.id + "~","g");
+		template = template.replace(re, kvp.value);
+	};
+
+
+var itemTemplate = `<item>
+    <title>~title~</title>
+    <itunes:summary>~description~</itunes:summary>
+    <description>~description~</description>
+    <link>~link~</link>
+	<language>~language~</language>
+    <enclosure url="~fileurl~" type="audio/mpeg" length="~length~"></enclosure>
+    <pubDate>~date~</pubDate>
+    <itunes:author>~author~</itunes:author>
+    <itunes:duration>~duration~</itunes:duration>
+    <itunes:explicit>~explicit~</itunes:explicit>
+    <guid>~fileurl~</guid>
+</item>`
+
+
+
+var root = location.protocol + '//' + location.host + "/";
+
+var items = "";
+
+	for (var i = 0, episode; episode = episodes[i]; i++) {
+	
+		var hours = Math.floor(episode.metadata.duration / 3600);
+		var minutes = Math.floor(episode.metadata.duration /60) - (hours * 60);
+		var seconds = Math.floor(episode.metadata.duration % 60);
+		
+		var duration = "";
+		
+		hours.toString().length == 1 ? duration += "0" + hours + ":" : duration += hours + ":"
+		minutes.toString().length == 1 ? duration += "0" + minutes + ":" : duration += minutes + ":"
+		seconds.toString().length == 1 ? seconds += "0" + seconds : duration += seconds
+		
+		
+	
+		var item = itemTemplate;
+		item = item.replace(/~title~/g, episode.metadata.name);
+		item = item.replace(/~description~/g, episode.metadata.description);
+		item = item.replace(/~link~/g, document.getElementById("link").value);
+		item = item.replace(/~fileurl~/g, root + episode.name);		
+		item = item.replace(/~language~/g, document.getElementById("language").value);
+		item = item.replace(/~author~/g, document.getElementById("itunes_author").value);
+		item = item.replace(/~explicit~/g, document.getElementById("itunes_explicit").value);
+		item = item.replace(/~duration~/g, duration);
+		item = item.replace(/~date~/g, pubDate(episode.metadata.date));
+		item = item.replace(/~length~/g, episode.contentLength);
+		
+		items += item;
+	}
+
+	template = template.replace("~items~", items);
+	
+	var options = {
+		contentSettings: {
+			contentType: "application/rss+xml"
+		}
+	}
+	
+	blobService.createBlockBlobFromText("$web", "rss.xml",template, options, function(error, result) {
+		if (error) {
+			alert("Could save RSS: " + error.message);
+		}
+	});		
+	
+
+}
+
+
+</script>	
+	
+  </head>
+  
+    
+  <body onload="init()">
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+  <a class="navbar-brand" href="#">Blobcaster</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse" id="navbarsExampleDefault">
+    <ul class="navbar-nav mr-auto">
+      <li class="nav-item active">
+        <a class="nav-link" href="#" onclick="$('#editPodcastMetaModal').modal('show')">🖊️ Edit Podcast Metadata</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" href="#" onclick="resetNewEpisode();$('#newEpisodeModal').modal('show')">🌟 New Episode</a>
+      </li>
+      <li class="nav-item active">
+        <a class="nav-link" target="_blank" href="/rss.xml">📜 Podcast XML</a>
+      </li>
+	  
+	  
+	  
+	  
+    </ul>
+  </div>
+</nav>
+
+<main role="main" class="container">
+
+<div id="episodes" >
+<div id="episodeTable">
+</div>
+</div>  
+
+</main><!-- /.container -->
+
+<div class="modal fade" id="logonModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="loginModalLabel">Login</h5>
+      </div>
+      <div class="modal-body">
+	  
+		<form>
+		  <div class="form-group">
+			<label for="accountName">Storage Account Name</label>
+			<input type="text"  value="" class="form-control" id="accountName" placeholder="Enter the name of your Storage Account">
+		  </div>
+		  <div class="form-group">
+			<label for="sasToken">SAS Token</label>
+			<input type="text" value="" class="form-control" id="sasToken" placeholder="Enter in a Shared Access Token.">
+		  </div>
+		  <div class="form-check">
+			<input type="checkbox" class="form-check-input" id="remember">
+			<label class="form-check-label" for="exampleCheck1">Remember these credentials.</label>
+		  </div>
+		</form>	  
+	  
+	  
+      </div>
+      <div class="modal-footer">
+        <button type="button"  onclick="login()" class="btn btn-primary">Login</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div class="modal fade" id="newEpisodeModal" tabindex="-1" role="dialog" aria-labelledby="newEpisodeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="newEpisodeModalLabel">New Episode</h5>
+      </div>
+      <div class="modal-body">
+	  
+		<form id="newEpisodeForm">
+		  <div class="form-group">
+			<label for="accountName">Episode</label>
+			<input type="file"   class="form-control" id="episodeFile" placeholder="Select the file for your episode to upload.">
+		  </div>
+		  <div class="form-group">
+			<label for="accountName">Episode Name</label>
+			<input type="text"   class="form-control" id="episodeName" placeholder="Enter the name/title of your episode.">
+		  </div>
+		  <div class="form-group">
+			<label for="accountName">Description</label>
+			<input type="text"   class="form-control" id="episodeDescription" placeholder="Enter a brief description of your episode.">
+		  </div>
+		  <div class="form-group">
+			<label for="accountName">Date</label>
+			<input type="date"   class="form-control" id="episodeDate" placeholder="Enter date of your episode.">
+		  </div>
+		</form>	  
+	  
+		<div id="uploadProgress" style="display:none">
+			<span id="uploadLabel">Uploading...</span>
+			<div class="progress">
+			  <div  id="uploadProgressBar" class="progress-bar progress-bar-animated" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+			</div>			
+		</div>
+	  
+	  
+	  
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="addEpisodeUploadButton" onclick="addEpisode()" class="btn btn-primary">Add Episode</button>
+		<button type="button" id="addEpisodeCancelButton" onclick="$('#newEpisodeModal').modal('hide')" class="btn btn-primary">Cancel</button>
+		<button type="button" id="addEpisodeOKButton" style="display:none" onclick="resetNewEpisode()" class="btn btn-primary">OK</button>      
+	  </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+<div class="modal fade" id="editPodcastMetaModal" tabindex="-1" role="dialog" aria-labelledby="editPodcastMetaModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editPodcastMetaModalLabel">Podcast Metadata</h5>
+      </div>
+      <div class="modal-body">
+	  
+		<form id="podcastMeta">		
+		  <div class="form-group">
+			<label for="title">Title</label>
+			<input type="text"   class="form-control form-control-sm" id="title" placeholder="Enter the title of your podcast">
+		  </div>
+		  <div class="form-group">
+			<label for="link">Link</label>
+			<input type="text"   class="form-control form-control-sm" id="link" placeholder="Enter a URL for your website/podcast.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="accountName">Language</label>
+			<input type="text"   class="form-control form-control-sm" id="language" placeholder="Enter the ISO language code (ie. en-us).">
+		  </div>		  
+		  <div class="form-group">
+			<label for="accountName">Copyright</label>
+			<input type="text"   class="form-control form-control-sm" id="copyright" placeholder="Enter Copyright information (License, Copyright, etc.)">
+		  </div>			  
+		  <div class="form-group">
+			<label for="itunes_subtitle">iTunes Subtitle</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_subtitle" placeholder="Enter the iTunes Author.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_author">iTunes Author</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_author" placeholder="Enter the title of your podcast">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_summary">iTunes Summary</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_summary" placeholder="Enter a summary of your podcast">
+		  </div>		  
+		  <div class="form-group">
+			<label for="description">Description</label>
+			<input type="text"   class="form-control form-control-sm" id="description" placeholder="Enter the description of your podcast">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_name">iTunes Name</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_name" placeholder="Enter the name of the iTunes user who owns the podcast.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_explicit">iTunes Email</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_email" placeholder="Enter the email address of the iTunes user who owns the podcast.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_explicit">iTunes Explicit</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_explicit" placeholder="Is this explicit? 'yes' or 'no'.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_image">iTunes Image</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_image" placeholder="URL to a square image (400x400) for your podcast.">
+		  </div>		  
+		  <div class="form-group">
+			<label for="itunes_category">iTunes Category</label>
+			<input type="text"   class="form-control form-control-sm" id="itunes_category" placeholder="The category for your podcast.">
+		  </div>		    
+		</form>	  
+	  
+	  
+      </div>
+      <div class="modal-footer">
+		<button type="button"  onclick="savePodcastMeta()" class="btn btn-primary">Save</button>
+        <button type="button"  onclick="$('#editPodcastMetaModal').modal('hide')" class="btn btn-primary">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script></body>
+
+<script src="azure-storage.blob.min.js"></script>
+</html>
