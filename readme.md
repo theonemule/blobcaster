@@ -117,7 +117,7 @@ The browser SDK requires a SAS Token for authentication against the storage acco
 
 5. The UI has build in documentation. Start by editing the Podcast Metadata, which will allow you set fields releated to the podcast itself, like the Title, the Author, the Owner and other such data. When you're ready to upload an episode, click on New Episode and upload your audio file and fill out the form there. The rss.xml is automatically generated and updated when changes are made to the podcast. You can submit the rss.xml URL to podcast services like Spotify or iTunes.
 
-![Login](images/Login.png)
+![Login](images/login.png)
 
 ## Conclusion
 
