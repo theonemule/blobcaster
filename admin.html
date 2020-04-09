@@ -167,6 +167,7 @@ function listEpisodes(){
 			}
 		}
 		writePodcastXML();
+		writeIndexHTML();
 	});
 
 
@@ -364,11 +365,15 @@ var itemTemplate = `<item>
     <guid>~fileurl~</guid>
 </item>`
 
+	var root = location.protocol + '//' + location.host + "/";
 
 
-var root = location.protocol + '//' + location.host + "/";
+	if (document.getElementById("endpoint").value != ""){
+		root = document.getElementById("endpoint").value;
+	}
 
-var items = "";
+
+	var items = "";
 
 	for (var i = 0, episode; episode = episodes[i]; i++) {
 	
@@ -380,7 +385,7 @@ var items = "";
 		
 		hours.toString().length == 1 ? duration += "0" + hours + ":" : duration += hours + ":"
 		minutes.toString().length == 1 ? duration += "0" + minutes + ":" : duration += minutes + ":"
-		seconds.toString().length == 1 ? seconds += "0" + seconds : duration += seconds
+		seconds.toString().length == 1 ? duration += "0" + seconds : duration += seconds
 		
 		
 	
@@ -416,6 +421,73 @@ var items = "";
 
 }
 
+function writeIndexHTML(){
+	blobService.getBlobToText("$web", "index.template.html", function(error, template){
+	
+		if(error){
+			alert("Could save index.html: " + error.message);
+			return;
+		}
+	
+		var root = location.protocol + '//' + location.host + "/";
+
+		var items = "";
+
+		for (var i = 0, episode; episode = episodes[i]; i++) {
+		
+			if (i % 3 == 0){
+				items += '<div class="row">'
+			}
+		
+			var hours = Math.floor(episode.metadata.duration / 3600);
+			var minutes = Math.floor(episode.metadata.duration /60) - (hours * 60);
+			var seconds = Math.floor(episode.metadata.duration % 60);
+			
+			var duration = "";
+			
+			hours.toString().length == 1 ? duration += "0" + hours + ":" : duration += hours + ":"
+			minutes.toString().length == 1 ? duration += "0" + minutes + ":" : duration += minutes + ":"
+			seconds.toString().length == 1 ? duration += "0" + seconds : duration += seconds
+			
+			items += `      <div class="col-md-4">
+			<h2>${episode.metadata.name}</h2>
+			<p>${episode.metadata.description}</p>
+			<p><strong>Date:</strong> ${episode.metadata.date} / <strong>Duration:</strong> ${duration}</p>
+			<p>	
+				<audio controls>
+				<source src="${root}${episode.name}" type="audio/mpeg">
+				Your browser does not support the audio element.
+				</audio>
+			</p>
+		  </div>`
+			
+			if (i % 3 == 2){
+				items += '</div>'
+			}		
+			
+		}
+		
+		if (i % 3 != 2){
+			items += '</div>'
+		}		
+		
+		template = template.replace("~items~", items);
+		
+		
+		var options = {
+			contentSettings: {
+				contentType: "text/html"
+			}
+		}
+		
+		blobService.createBlockBlobFromText("$web", "index.html",template, options, function(error, result) {
+			if (error) {
+				alert("Could save index.html: " + error.message);
+			}
+		});		
+
+	});
+}
 
 </script>	
 	
@@ -548,6 +620,14 @@ var items = "";
       <div class="modal-body">
 	  
 		<form id="podcastMeta">		
+		
+
+
+		
+		  <div class="form-group">
+			<label for="title">Primary Endpoint</label>
+			<input type="text"   class="form-control form-control-sm" id="endpoint" placeholder="Enter the static website endpoint for the website if using custom domains.">
+		  </div>
 		  <div class="form-group">
 			<label for="title">Title</label>
 			<input type="text"   class="form-control form-control-sm" id="title" placeholder="Enter the title of your podcast">
@@ -600,6 +680,8 @@ var items = "";
 			<label for="itunes_category">iTunes Category</label>
 			<input type="text"   class="form-control form-control-sm" id="itunes_category" placeholder="The category for your podcast.">
 		  </div>		    
+		  
+		  
 		</form>	  
 	  
 	  

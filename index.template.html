@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="A podcast covering the latest news on Microsoft Azure and technology in the Microsoft space.">
+    <meta name="author" content="Blaize Stewart">
+    <title>Tech on Fire with Blaize</title>
+
+
+    <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" >
+
+
+    <!-- Favicons -->
+
+<meta name="theme-color" content="#563d7c">
+
+
+    <style>
+
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+	  
+	.jumbotron {
+		background-image:url('title.png');
+		height:300px;
+		background-repeat: no-repeat;
+		background-size: 100% 100%;
+	}	  
+	  
+	  
+    </style>
+    <!-- Custom styles for this template -->
+
+  </head>
+  
+<script>
+
+function detectplay(){
+
+	if(window.location.hash) {
+		var decodedString = atob(window.location.hash.substring(1));
+		var episodeData = decodedString.split("~~");
+		if(episodeData.length > 0){
+			document.getElementById("autoTitle").innerHTML = episodeData[0];
+			var audio = document.getElementById("autoControls");
+			audio.src = episodeData[1];
+			audio.load();		
+			$('#autoplay').modal('show');			
+		}		
+	} 
+}
+
+</script>
+  
+<body onload="detectplay()">
+  
+  
+<body>
+
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample08" aria-controls="navbarsExample08" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+
+  <div class="collapse navbar-collapse justify-content-md-center" id="navbarsExample08">
+    <ul class="navbar-nav">
+      <li class="nav-item active">
+        <a class="nav-link" href="#">Also on:</a>
+      </li>
+      <!--<li class="nav-item">
+        <a class="nav-link" href="#">Spotify</a>
+      </li>-->
+      <li class="nav-item">
+        <a class="nav-link" href="https://podcasts.apple.com/us/podcast/tech-on-fire/id1505856671">iTunes</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://playmusic.app.goo.gl/?ibi=com.google.PlayMusic&isi=691797987&ius=googleplaymusic&apn=com.google.android.music&link=https://play.google.com/music/m/Ijulxkpurmfwf3bc4fshu5b6khi?t%3DTech_on_Fire%26pcampaignid%3DMKT-na-all-co-pr-mu-pod-16">Google Play</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://www.stitcher.com/podcast/tech-on-fire?refid=stpr">Stitcher</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="https://www.youtube.com/channel/UC6FvMOPzEVIFLdlLCdPjN9Q">YouTube</a>
+      </li>	  
+      <li class="nav-item">
+        <a class="nav-link" href="https://tunein.com/podcasts/Technology-Podcasts/Tech-on-Fire-p1312187/">TuneIn</a>
+      </li>	  
+      <li class="nav-item">
+        <a class="nav-link" href="/rss.xml">RSS XML</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<main role="main" class="container">
+
+<div class="jumbotron">
+<div class="container">
+<!--<h1 class="display-3">Tech on Fire with Blaize</h1>-->
+<p></p>
+</div>
+</div>
+
+
+
+<div class="container">
+	~items~
+</div>
+
+</main>
+
+<div class="modal fade" id="autoplay" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="autoTitle">Login</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>		
+      </div>
+      <div class="modal-body">
+	  
+			<div class="row">      
+			<div class="col-md-4">
+			<p>	
+				<audio controls id="autoControls" >
+				Your browser does not support the audio element.
+				</audio>
+			</p>
+		    </div>
+		    </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+
+	  
+	  </body>
+	  
+</html>
