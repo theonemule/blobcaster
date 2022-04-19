@@ -3,7 +3,7 @@
 
 ![Static Site](images/screenshot.png)
 
-This little app grow out of a want to manage a podcast using nothing but Blob Storage. I like Blob Storage because it is versatile, fast, and incredibly inexpensive to use. I orignially thought I might use an Azure Function based API for this, but I in the process of thinking through this, I realized there was nothing about functinos or any other sever side API that I needed to make this work. I could simply use a brower and interact with the Blob Storage API's. The resulting app then is both hosted on Blob Storage and interacts with Blob storage.
+This little app grow out of a want to manage a podcast using nothing but Blob Storage. I like Blob Storage because it is versatile, fast, and incredibly inexpensive to use. I orignially thought I might use an Azure Function based API for this, but I in the process of thinking through this, I realized there was nothing about functions or any other sever side API that I needed to make this work. I could simply use a browser and interact with the Blob Storage API's. The resulting app then is both hosted on Blob Storage and interacts with Blob storage.
 
 Rather than keep this app to myself, I thought I would share it with world shuold anyone else be interested in a similar approach. 
 
